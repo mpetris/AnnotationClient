@@ -36,11 +36,11 @@ public class Page {
 		this.text = text;
 	}
 	
-//	@Override
-//	public String toString() {
-//		return "Page["+pageStart+","+pageEnd+"]\n"+text;
-//	}
-//	
+	@Override
+	public String toString() {
+		return "Page["+pageStart+","+pageEnd+"]\n"+text;
+	}
+	
 	
 	private Document htmlDocModel;
 	
@@ -105,8 +105,10 @@ public class Page {
     	return builder.toString();
     }
 	
-	@Override
-	public String toString() {
+	public String toHTML() {
+		if (htmlDocModel == null) {
+			buildModel();
+		}
 		return htmlDocModel.toXML().substring(22).replaceAll("\\Q&amp;_nbsp;\\E", "&nbsp;");
 	}
 	

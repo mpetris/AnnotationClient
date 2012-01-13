@@ -6,6 +6,10 @@ import java.util.regex.Pattern;
 
 public class Pager {
 	
+	public static interface PagerListener {
+		public void textChanged();
+	}
+	
 	static final String LINE_CONTENT_PATTERN = 
 			"(\\S+)|(\\p{Blank}+)|(\r\n|[\n\r\u2028\u2029\u0085])";
 	
@@ -15,14 +19,27 @@ public class Pager {
 
 
 	private ArrayList<Page> pages;
-	private int current;
+	private int currentPageIndex=0;
+
+	private int approxMaxLineLength;
+	private int maxPageLengthInLines;
+	private PagerListener pagerListener;
 	
-	public Pager(String text, int approxMaxLineLength, int maxPageLengthInLines) {
+	public Pager(int approxMaxLineLength, int maxPageLengthInLines) {
 		pages = new ArrayList<Page>();
-		buildPages(text, approxMaxLineLength, maxPageLengthInLines);
+		this.approxMaxLineLength = approxMaxLineLength;
+		this.maxPageLengthInLines = maxPageLengthInLines;
+	}
+	
+	public void setText(String text) {
+		pages.clear();
+		buildPages(text);
+		if (pagerListener != null) {
+			pagerListener.textChanged();
+		}
 	}
 
-	private void buildPages(String text, int approxMaxlineLength, int maxPageLengthInLines) {
+	private void buildPages(String text) {
 		Matcher matcher = Pattern.compile(LINE_CONTENT_PATTERN).matcher(text);
 
 		int pageStart = 0;
@@ -32,7 +49,7 @@ public class Pager {
 		int lineLength = 0;
 
 		while(matcher.find()) {
-			if (lineLength + matcher.group().length()>approxMaxlineLength) {
+			if (lineLength + matcher.group().length()>approxMaxLineLength) {
 				pageLines++;
 				pageEnd+=lineLength;
 				lineLength = 0;
@@ -57,6 +74,7 @@ public class Pager {
 			pageEnd+=lineLength;
 			pageLines++;
 		}
+		
 		if (pageLines != 0) {
 			pages.add(new Page(text.substring(pageStart, pageEnd), pageStart, pageEnd));
 		}
@@ -70,5 +88,32 @@ public class Pager {
 		}
 		return builder.toString();
 	}
+
+	public Page getCurrentPage() {
+		return pages.get(currentPageIndex);
+	}
 	
+	public Page getPage(int pageNumber) {
+		int index = pageNumber-1;
+		if (index < 0) {
+			index = 0;
+		}
+		else if (index >= pages.size()) {
+			index = pages.size()-1;
+		}
+		currentPageIndex = index;
+		return pages.get(index);
+	}
+
+	public boolean isEmpty() {
+		return pages.isEmpty();
+	}
+	
+	public int getLastPageNumber() {
+		return pages.size();
+	}
+	
+	public void setPagerListener(PagerListener pagerListener) {
+		this.pagerListener = pagerListener;
+	}
 }

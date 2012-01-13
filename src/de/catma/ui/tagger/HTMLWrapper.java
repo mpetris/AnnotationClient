@@ -41,6 +41,10 @@ public class HTMLWrapper {
 		buildModel();
 	}
 	
+	public Document getHtmlDocModel() {
+		return htmlDocModel;
+	}
+
 	private void buildModel() {
 		Matcher matcher = Pattern.compile(LINE_CONTENT_PATTERN).matcher(text);
 		Element rootDiv = new Element(HTMLElement.div.name());
@@ -102,10 +106,8 @@ public class HTMLWrapper {
     	return builder.toString();
     }
 	
-	public String toHTML() {
-		if (htmlDocModel == null) {
-			buildModel();
-		}
+	@Override
+	public String toString() {
 		return htmlDocModel.toXML().substring(22).replaceAll("\\Q&amp;_nbsp;\\E", "&nbsp;");
 	}
 	

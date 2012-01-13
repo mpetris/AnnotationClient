@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 
 public class AnnotationTargetLoader {
 
@@ -33,7 +34,8 @@ public class AnnotationTargetLoader {
 	private String streamToString(InputStream is, String charset) throws IOException {
 		StringBuilder contentBuffer = new StringBuilder();
 		BufferedReader reader = new BufferedReader(
-				new InputStreamReader( is, charset ) );
+			new InputStreamReader(
+				new BOMFilterInputStream(is, Charset.forName(charset)), charset ) );
 		
 		char[] buf = new char[65536];
 		int cCount = -1;

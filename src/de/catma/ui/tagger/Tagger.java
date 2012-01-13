@@ -1,8 +1,6 @@
 package de.catma.ui.tagger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.vaadin.terminal.PaintException;
@@ -12,6 +10,8 @@ import com.vaadin.ui.AbstractComponent;
 import de.catma.ui.client.ui.tagger.VTagger;
 import de.catma.ui.client.ui.tagger.shared.EventAttribute;
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
+import de.catma.ui.tagger.pager.Page;
+import de.catma.ui.tagger.pager.Pager;
 
 /**
  * Server side component for the VMyComponent widget.
@@ -22,17 +22,19 @@ public class Tagger extends AbstractComponent {
 
 	private Map<String,String> attributes = new HashMap<String, String>();
 	private Map<String, TagInstance> tagInstances = new HashMap<String,TagInstance>();
-	private String html;
+	private Pager pager;
 	
-	private HTMLWrapper htmlWrapper;
+	public Tagger(Pager pager) {
+		this.pager = pager;
+	}
 
 	@Override
 	public void paintContent(PaintTarget target) throws PaintException {
 		super.paintContent(target);
 
 		if (target.isFullRepaint()) {
-			if (html != null) {
-				attributes.put(EventAttribute.HTML.name(), html);
+			if (!pager.isEmpty()) {
+				attributes.put(EventAttribute.HTML.name(), pager.getCurrentPage().toHTML());
 			}
 
 			int i = 0;
@@ -87,7 +89,6 @@ public class Tagger extends AbstractComponent {
 	}
 	
 	private void setHTML(String html) {
-		this.html = html;
 		attributes.put(EventAttribute.HTML.name(), html);
 		requestRepaint();
 	}
@@ -98,8 +99,12 @@ public class Tagger extends AbstractComponent {
 //	}
 
 	public void setText(String text) {
-		this.htmlWrapper = new HTMLWrapper(text.substring(0, Math.min(4000, text.length()))); //TODO: just a shortcut until paging is working
-		//htmlWrapper.print();
-		setHTML(htmlWrapper.toString());
+		pager.setText(text);
+		setHTML(pager.getCurrentPage().toHTML());
+	}
+	
+	public void setPage(int pageNumber) {
+		Page page = pager.getPage(pageNumber);
+		setHTML(page.toHTML());
 	}
 }

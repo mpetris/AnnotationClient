@@ -5,11 +5,15 @@ import java.util.Map;
 
 import com.vaadin.Application;
 import com.vaadin.terminal.ParameterHandler;
-import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 
 import de.catma.ui.tagger.Tagger;
+import de.catma.ui.tagger.pager.Pager;
+import de.catma.ui.tagger.pager.PagerComponent;
+import de.catma.ui.tagger.pager.PagerComponent.PageChangeListener;
 
 public class AnnotationClientApplication extends Application {
 	private static enum ArgumentKey {
@@ -17,25 +21,34 @@ public class AnnotationClientApplication extends Application {
 		;
 	}
 
-
 	@Override
 	public void init() {
 		final Window mainWindow = new Window("Annotator");
 
-		Panel editorPanel = new Panel("Tagger");
-		final Tagger tagger = new Tagger();
-		tagger.setSizeFull();
+		Panel editorPanel = new Panel("Interedition OAC Annotation Client - Bootcamp, January 2012 Leuven");
+		editorPanel.setStyleName("editor-panel");
 		editorPanel.getContent().setSizeUndefined();
 		editorPanel.setWidth("640px");
-		editorPanel.addComponent(tagger);
 		editorPanel.setScrollable(true);
+		Pager pager = new Pager(80, 30);
+		final Tagger tagger = new Tagger(pager);
+		tagger.setSizeFull();
+		editorPanel.addComponent(tagger);
 
-		final HorizontalLayout mainLayout = new HorizontalLayout();
+		PagerComponent pagerComponent = new PagerComponent(pager, new PageChangeListener() {
+			public void pageChanged(int number) {
+				tagger.setPage(number);
+			}
+		});
+		
+		final VerticalLayout mainLayout = new VerticalLayout();
+		mainLayout.addComponent(editorPanel);
+		mainLayout.setComponentAlignment(editorPanel, Alignment.MIDDLE_CENTER);
 
 		mainWindow.setContent(mainLayout);
 		
-		mainLayout.addComponent(editorPanel);
-		mainLayout.setExpandRatio(editorPanel, 2);
+		mainLayout.addComponent(pagerComponent);
+		mainLayout.setComponentAlignment(pagerComponent, Alignment.MIDDLE_CENTER);
 		
 		setMainWindow(mainWindow);
 		setTheme("cleatheme");
