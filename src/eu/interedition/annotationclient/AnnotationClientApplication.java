@@ -31,6 +31,7 @@ public class AnnotationClientApplication extends Application {
 		editorPanel.setWidth("640px");
 		editorPanel.setScrollable(true);
 		Pager pager = new Pager(80, 30);
+		System.out.println("nase");
 		final Tagger tagger = new Tagger(pager);
 		tagger.setSizeFull();
 		editorPanel.addComponent(tagger);
@@ -57,7 +58,8 @@ public class AnnotationClientApplication extends Application {
 
 			public void handleParameters(Map<String, String[]> parameters) {
 
-				String uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
+//				String uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
+				String uri = "file:///C:/data/projects/interedition/pg11.txt";
 				if ((parameters != null) 
 						&& (parameters.containsKey(ArgumentKey.uri.name()) 
 								&& (parameters.get(ArgumentKey.uri.name()).length > 0))) {	

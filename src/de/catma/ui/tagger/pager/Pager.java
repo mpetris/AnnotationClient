@@ -3,6 +3,7 @@ package de.catma.ui.tagger.pager;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.CRC32;
 
 public class Pager {
 	
@@ -24,6 +25,7 @@ public class Pager {
 	private int approxMaxLineLength;
 	private int maxPageLengthInLines;
 	private PagerListener pagerListener;
+	private Long checksum = null;
 	
 	public Pager(int approxMaxLineLength, int maxPageLengthInLines) {
 		pages = new ArrayList<Page>();
@@ -32,11 +34,26 @@ public class Pager {
 	}
 	
 	public void setText(String text) {
-		pages.clear();
-		buildPages(text);
-		if (pagerListener != null) {
-			pagerListener.textChanged();
+		if (!matchChecksum(text)) {
+			pages.clear();
+			buildPages(text);
+			if (pagerListener != null) {
+				pagerListener.textChanged();
+			}
 		}
+	}
+
+	private boolean matchChecksum(String text) {
+		
+		CRC32 crc32 = new CRC32();
+		crc32.update(text.getBytes());
+		if ( (checksum != null) && (crc32.getValue() == checksum)) {
+			return true;
+		}
+		
+		checksum = crc32.getValue();
+
+		return false;
 	}
 
 	private void buildPages(String text) {

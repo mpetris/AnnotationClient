@@ -21,7 +21,6 @@ public class Tagger extends AbstractComponent {
 	private static final long serialVersionUID = 1L;
 
 	private Map<String,String> attributes = new HashMap<String, String>();
-	private Map<String, TagInstance> tagInstances = new HashMap<String,TagInstance>();
 	private Pager pager;
 	
 	public Tagger(Pager pager) {
@@ -32,25 +31,22 @@ public class Tagger extends AbstractComponent {
 	public void paintContent(PaintTarget target) throws PaintException {
 		super.paintContent(target);
 
-		if (target.isFullRepaint()) {
-			if (!pager.isEmpty()) {
-				attributes.put(EventAttribute.HTML.name(), pager.getCurrentPage().toHTML());
-			}
-
+		if (target.isFullRepaint() && !pager.isEmpty()) {
+			attributes.put(EventAttribute.HTML.name(), pager.getCurrentPage().toHTML());
+			System.out.println("putting html");
+		}
+		
+		if (!pager.isEmpty() && attributes.containsKey(EventAttribute.HTML.name())) {
+			System.out.println("putting tags: " + pager.getCurrentPage().getTagInstances().size());
 			int i = 0;
-			for (TagInstance t : tagInstances.values()) {
+			for (TagInstance t : pager.getCurrentPage().getTagInstances()) {
 				target.addAttribute(EventAttribute.TAGINSTANCE.name()+i, t.toMap());
 				i++;
 			}
 		}
 		
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
-			if (entry.getValue() == null) {
-				System.out.println(entry.getKey());
-			}
-			else {
-				target.addAttribute(entry.getKey(), entry.getValue());
-			}
+			target.addAttribute(entry.getKey(), entry.getValue());
 		}
 		
 		attributes.clear();
@@ -75,13 +71,12 @@ public class Tagger extends AbstractComponent {
 			TagInstance tagInstance = 
 				new TagInstance(
 						(Map<String,Object>)variables.get(EventAttribute.TAGINSTANCE.name()));
-			tagInstances.put(tagInstance.getInstanceID(), tagInstance);
-			System.out.println(tagInstance);
-			
+			pager.getCurrentPage().addTagInstance(tagInstance);
 		}
 		
 		if (variables.containsKey(EventAttribute.TAGINSTANCE_REMOVE.name())) {
-			tagInstances.remove(variables.get(EventAttribute.TAGINSTANCE_REMOVE.name()));
+			pager.getCurrentPage().removeTagInstance(
+					(String)variables.get(EventAttribute.TAGINSTANCE_REMOVE.name()));
 		}
 		if (variables.containsKey(EventAttribute.LOGMESSAGE.name())) {
 			System.out.println(variables.get(EventAttribute.LOGMESSAGE.name()));
@@ -99,6 +94,7 @@ public class Tagger extends AbstractComponent {
 //	}
 
 	public void setText(String text) {
+		System.out.println("setting text");
 		pager.setText(text);
 		setHTML(pager.getCurrentPage().toHTML());
 	}

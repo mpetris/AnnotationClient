@@ -1,6 +1,11 @@
 package de.catma.ui.tagger.pager;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -10,6 +15,7 @@ import nu.xom.Element;
 import nu.xom.Serializer;
 import nu.xom.Text;
 import de.catma.ui.client.ui.tagger.shared.ContentElementID;
+import de.catma.ui.client.ui.tagger.shared.TagInstance;
 
 public class Page {
 
@@ -29,6 +35,7 @@ public class Page {
 	private int pageStart;
 	private int pageEnd;
 	private String text;
+	private Map<String, TagInstance> tagInstances = new HashMap<String,TagInstance>();
 	
 	public Page(String text, int pageStart, int pageEnd) {
 		this.pageStart = pageStart;
@@ -123,4 +130,15 @@ public class Page {
 		}
 	}
 
+	public void addTagInstance(TagInstance tagInstance) {
+		this.tagInstances.put(tagInstance.getInstanceID(), tagInstance);
+	}
+	
+	public void removeTagInstance(String tagInstanceID) {
+		this.tagInstances.remove(tagInstanceID);
+	}
+	
+	public Collection<TagInstance> getTagInstances() {
+		return Collections.unmodifiableCollection(this.tagInstances.values());
+	}
 }
