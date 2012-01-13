@@ -92,11 +92,7 @@ class TagMenuPopup extends PopupPanel {
 		public void addTag(final String tagInstanceID) {
 			
 			TagInstance tagInstance = vTagger.getTagInstance(tagInstanceID);
-//			HorizontalPanel hPanel = new HorizontalPanel();
-//			hPanel.setVerticalAlignment(HasVerticalAlignment.ALIGN_MIDDLE);
-//			hPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_RIGHT);
 
-//			hPanel.setStylePrimaryName("tagger_menu_item");
 			Grid grid = new Grid(1,3);
 			Label l = new Label(tagInstance.getBody() + " #" + tagInstanceID);
 			grid.setWidget(0, 0, l);
