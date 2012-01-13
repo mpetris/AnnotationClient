@@ -1,6 +1,7 @@
 package de.catma.ui.client.ui.tagger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,13 +20,14 @@ import com.vaadin.terminal.gwt.client.ApplicationConnection;
 import com.vaadin.terminal.gwt.client.Paintable;
 import com.vaadin.terminal.gwt.client.UIDL;
 import com.vaadin.terminal.gwt.client.VConsole;
+import com.vaadin.terminal.gwt.client.ValueMap;
 
-import de.catma.ui.client.ui.common.event.EventListener;
 import de.catma.ui.client.ui.tagger.impl.SelectionHandlerImplStandard;
 import de.catma.ui.client.ui.tagger.impl.SelectionHandlerImplStandard.Range;
 import de.catma.ui.client.ui.tagger.menu.TagMenu;
 import de.catma.ui.client.ui.tagger.shared.EventAttribute;
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
+import de.catma.ui.client.ui.tagger.shared.TextRange;
 
 /**
  * Client side widget which communicates with the server. Messages from the
@@ -47,6 +49,8 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 	/** Reference to the server connection object. */
 	private ApplicationConnection serverConnection;
 	
+	private HashMap<String, TagInstance> tagInstances = new HashMap<String, TagInstance>();
+	
 	public VTagger() {
 		this(Document.get().createDivElement());
 	}
@@ -67,19 +71,12 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 
 		addMouseUpHandler(this);
 
-		addMouseMoveHandler(new TagMenu(new EventListener() {
-			
-			public void eventFired(Object event) {
-				removeTag(event.toString());
-				
-			}
-		}));
+		addMouseMoveHandler(new TagMenu(this));
 	}
 	
-	private void removeTag(String tagID) {
-		String baseID = tagID.substring(0, tagID.lastIndexOf("_"));
-		int subID = 1;
-		Element taggedSpan = Document.get().getElementById(baseID + "_" + subID++);
+	public void removeTag(String tagInstanceID) {
+		int currentPartID = 1;
+		Element taggedSpan = Document.get().getElementById(tagInstanceID + "_" + currentPartID++);
 		while(taggedSpan != null) {
 			Element parent = taggedSpan.getParentElement();
 			DebugUtil.printNode(taggedSpan);
@@ -90,8 +87,10 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 				
 			}
 			parent.removeChild(taggedSpan);
-			taggedSpan = Document.get().getElementById(baseID + "_" + subID++);
+			taggedSpan = Document.get().getElementById(tagInstanceID + "_" + currentPartID++);
 		}
+		tagInstances.remove(tagInstanceID);
+		sendMessage(EventAttribute.TAGINSTANCE_REMOVE, tagInstanceID);
 	}
 
 	public void onMouseUp(MouseUpEvent event) {
@@ -122,23 +121,30 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 			VConsole.log("setting html");
 			setHTML(new HTML(uidl.getStringAttribute(EventAttribute.HTML.name())));
 		}
-		if (uidl.hasAttribute(EventAttribute.TAGINSTANCE.name())) {
-			String tag = uidl.getStringAttribute(EventAttribute.TAGINSTANCE.name());
-			VConsole.log("adding tag: " + tag);
-			addTag(tag);
-		}
-		if (uidl.hasAttribute(EventAttribute.ALLTAGINSTANCES.name())) {
-			String[] tagInstances = uidl.getStringArrayAttribute(EventAttribute.ALLTAGINSTANCES.name());
-			RangeConverter rangeConverter = new RangeConverter();
-			for (String serializedInstance : tagInstances) {
-				TagInstance tagInstance = new TagInstance(serializedInstance);
-				TaggedSpanFactory taggedSpanFactory = 
-						new TaggedSpanFactory(tagInstance.getTag(), tagInstance.getInstanceID());
-				for (TextRange textRange : tagInstance.getRanges()) {
-					addTagToRange(taggedSpanFactory, rangeConverter.convertToNodeRange(textRange));
-				}
+//		if (uidl.hasAttribute(EventAttribute.TAGINSTANCE.name())) {
+//			String tag = uidl.getStringAttribute(EventAttribute.TAGINSTANCE.name());
+//			VConsole.log("adding tag: " + tag);
+//			addTag(tag);
+//		}
+
+		int i=0;
+		RangeConverter rangeConverter = new RangeConverter();
+
+		while (uidl.hasAttribute(EventAttribute.TAGINSTANCE.name()+i)) {
+
+			ValueMap tagInstanceValueMap = 
+					uidl.getMapAttribute(EventAttribute.TAGINSTANCE.name()+i);
+			TagInstance tagInstance = getTagInstance(tagInstanceValueMap);
+			
+			tagInstances.put(tagInstance.getInstanceID(), tagInstance);
+			
+			TaggedSpanFactory taggedSpanFactory = 
+					new TaggedSpanFactory(tagInstance.getInstanceID());
+			for (TextRange textRange : tagInstance.getRanges()) {
+				addTagToRange(taggedSpanFactory, rangeConverter.convertToNodeRange(textRange));
 			}
 			
+			i++;
 		}
 	}
 
@@ -154,9 +160,9 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 		getElement().appendChild(html.getElement());
 	}
 	 
-	public void addTag(String tag) {
+	public void addTag(String body) {
 		
-		TaggedSpanFactory taggedSpanFactory = new TaggedSpanFactory(tag);
+		TaggedSpanFactory taggedSpanFactory = new TaggedSpanFactory();
 		if ((lastRangeList != null) && (!lastRangeList.isEmpty())) {
 
 			//TODO: flatten ranges to prevent multiple tagging of the same range with the same instance!
@@ -183,7 +189,8 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 			}
 
 			if (!textRanges.isEmpty()) {
-				TagInstance te = new TagInstance(tag, taggedSpanFactory.getInstanceID(), textRanges);
+				TagInstance te = new TagInstance(body, taggedSpanFactory.getInstanceID(), textRanges);
+				tagInstances.put(te.getInstanceID(), te);
 				sendMessage(EventAttribute.LOGMESSAGE, "TAGEVENT.toString: " + te.toString());
 				sendMessage(EventAttribute.TAGINSTANCE, te.toMap());
 			}
@@ -315,36 +322,34 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 		}
 	
 
-		if (!hasTag(startNode, taggedSpanFactory.getTag())) {
-			
-			// a text node for the unmarked start
-			Text unmarkedStartSeq = 
-				Document.get().createTextNode(
-					startNodeText.substring(
-							unmarkedStartSeqBeginIdx, unmarkedStartSeqEndIdx)); 
-	
-			// get a tagged span for the tagged sequence of the starting node
-			Element taggedSpan = 
-					taggedSpanFactory.createTaggedSpan(
-							startNodeText.substring(markedStartSeqBeginIdx, markedStartSeqEndIdx));
-			
-			if (tw.isAfter()) {
-				// insert unmarked text seqence before the old node
-				startNodeParent.insertBefore(
-						unmarkedStartSeq, startNode);
-				// insert tagged spans before the old node
-				startNodeParent.insertBefore(taggedSpan, startNode);
-				// remove the old node
-				startNodeParent.removeChild(startNode);
-			}
-			else {
-				// insert tagged sequences before the old node
-				startNodeParent.insertBefore(taggedSpan, startNode);
-				// replace the old node with a new node for the unmarked sequence
-				startNodeParent.replaceChild(
-						unmarkedStartSeq, startNode);
-			}
+		// a text node for the unmarked start
+		Text unmarkedStartSeq = 
+			Document.get().createTextNode(
+				startNodeText.substring(
+						unmarkedStartSeqBeginIdx, unmarkedStartSeqEndIdx)); 
+
+		// get a tagged span for the tagged sequence of the starting node
+		Element taggedSpan = 
+				taggedSpanFactory.createTaggedSpan(
+						startNodeText.substring(markedStartSeqBeginIdx, markedStartSeqEndIdx));
+		
+		if (tw.isAfter()) {
+			// insert unmarked text seqence before the old node
+			startNodeParent.insertBefore(
+					unmarkedStartSeq, startNode);
+			// insert tagged spans before the old node
+			startNodeParent.insertBefore(taggedSpan, startNode);
+			// remove the old node
+			startNodeParent.removeChild(startNode);
 		}
+		else {
+			// insert tagged sequences before the old node
+			startNodeParent.insertBefore(taggedSpan, startNode);
+			// replace the old node with a new node for the unmarked sequence
+			startNodeParent.replaceChild(
+					unmarkedStartSeq, startNode);
+		}
+
 		List<Node> affectedNodes = tw.getAffectedNodes();
 		DebugUtil.printNodes("affectedNodes", affectedNodes);
 
@@ -352,7 +357,7 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 		for (int i=1; i<affectedNodes.size()-1;i++) {
 			Node affectedNode = affectedNodes.get(i);
 			// create the tagged span ...
-			Element taggedSpan = 
+			taggedSpan = 
 				taggedSpanFactory.createTaggedSpan(affectedNode.getNodeValue());
 			
 			// ... and insert it
@@ -369,7 +374,7 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 							unmarkedEndSeqBeginIdx, unmarkedEndSeqEndIdx));
 		
 		// the tagged part of the last node
-		Element taggedSpan = 
+		taggedSpan = 
 			taggedSpanFactory.createTaggedSpan(
 						endNodeText.substring(
 								markedEndSeqBeginIdx, markedEndSeqEndIdx));
@@ -393,22 +398,6 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 		}
 	}
 	
-	private boolean hasTag(Node node, String tag) {
-	// TODO: shall we allow multiple tagging with the same tag (maybe different non-contiguous tags or different properties!!!)
-		
-//		Element current = node.getParentElement();
-//		do {
-//			if (current.getClassName().equals(tag)) {
-//				return true;
-//			}
-//			current = current.getParentElement();
-//		}
-//		while(current != null);
-		
-		return false; 
-	}
-
-
 	private void sendMessage(EventAttribute taggerEventAttribute, Map<String,Object> message) {
 		serverConnection.updateVariable(
 				clientID, taggerEventAttribute.name(), message, true);
@@ -418,5 +407,35 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 		serverConnection.updateVariable(
 				clientID, taggerEventAttribute.name(), message, true);
 		
+	}
+	
+	public boolean hasSelection() {
+		if ((lastRangeList != null) && !lastRangeList.isEmpty()) {
+			for (Range r : lastRangeList) {
+				if ((r.getEndNode()!=r.getStartNode()) | (r.getEndOffset() != r.getStartOffset())) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	public TagInstance getTagInstance(String tagInstanceID) {
+		return tagInstances.get(tagInstanceID);
+	}
+	
+	public String getTagInstanceID(String tagInstancePartID) {
+		return tagInstancePartID.substring(0, tagInstancePartID.lastIndexOf("_"));
+	}
+	
+	private TagInstance getTagInstance(ValueMap tagInstanceValueMap) {
+		Map<String,Object> valueMap = new HashMap<String, Object>();
+		for (String key : tagInstanceValueMap.getKeySet()) {
+			valueMap.put(key, tagInstanceValueMap.getString(key));
+		}
+
+		TagInstance tagInstance = new TagInstance(valueMap);
+		return tagInstance;
 	}
 }

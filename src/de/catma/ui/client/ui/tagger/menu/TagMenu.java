@@ -9,7 +9,7 @@ import com.google.gwt.event.dom.client.MouseMoveEvent;
 import com.google.gwt.event.dom.client.MouseMoveHandler;
 import com.google.gwt.user.client.Timer;
 
-import de.catma.ui.client.ui.common.event.EventListener;
+import de.catma.ui.client.ui.tagger.VTagger;
 import de.catma.ui.client.ui.tagger.shared.ContentElementID;
 
 
@@ -32,12 +32,12 @@ public class TagMenu implements MouseMoveHandler {
 	private int lastClientX;
 	private int lastClientY;
 	private MenuTimer curMenuTimer;
-	private EventListener tagActionListener;
 	private TagMenuPopup lastPopup;
+	private VTagger vTagger;
 	
-	public TagMenu(EventListener tagActionListener) {
+	public TagMenu(VTagger vTagger) {
 		super();
-		this.tagActionListener = tagActionListener;
+		this.vTagger = vTagger;
 	}
 
 	public void loadMenu() {
@@ -45,17 +45,15 @@ public class TagMenu implements MouseMoveHandler {
 		if (line != null) {
 			List<Element> taggedSpans = findTargetSpan(line);
 			
-			if (!taggedSpans.isEmpty()) {
-				
+			if (vTagger.hasSelection() || !taggedSpans.isEmpty()) {
 				hidePopup();
 				
-				lastPopup = new TagMenuPopup(tagActionListener);
+				lastPopup = new TagMenuPopup(vTagger);
 				lastPopup.setPopupPosition(lastClientX, lastClientY+5);
 				
 				for (Element span : taggedSpans) {
-					lastPopup.addTag(span.getAttribute("class"), span.getAttribute("id"));
+					lastPopup.addTag(vTagger.getTagInstanceID(span.getAttribute("id")));
 				}
-				
 				lastPopup.show();
 			}
 			else {

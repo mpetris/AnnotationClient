@@ -7,6 +7,7 @@ import com.vaadin.terminal.gwt.client.VConsole;
 
 import de.catma.ui.client.ui.tagger.impl.SelectionHandlerImplStandard.Range;
 import de.catma.ui.client.ui.tagger.shared.ContentElementID;
+import de.catma.ui.client.ui.tagger.shared.TextRange;
 
 public class RangeConverter {
 	private static enum Direction {

@@ -21,7 +21,7 @@ public class Tagger extends AbstractComponent {
 	private static final long serialVersionUID = 1L;
 
 	private Map<String,String> attributes = new HashMap<String, String>();
-	private List<String> tagInstances = new ArrayList<String>();
+	private Map<String, TagInstance> tagInstances = new HashMap<String,TagInstance>();
 	private String html;
 	
 	private HTMLWrapper htmlWrapper;
@@ -34,7 +34,12 @@ public class Tagger extends AbstractComponent {
 			if (html != null) {
 				attributes.put(EventAttribute.HTML.name(), html);
 			}
-			target.addAttribute(EventAttribute.ALLTAGINSTANCES.name(), tagInstances.toArray(new String[] {}));
+
+			int i = 0;
+			for (TagInstance t : tagInstances.values()) {
+				target.addAttribute(EventAttribute.TAGINSTANCE.name()+i, t.toMap());
+				i++;
+			}
 		}
 		
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -65,14 +70,17 @@ public class Tagger extends AbstractComponent {
 
 		if (variables.containsKey(EventAttribute.TAGINSTANCE.name())) {
 			@SuppressWarnings("unchecked")
-			TagInstance event = 
+			TagInstance tagInstance = 
 				new TagInstance(
 						(Map<String,Object>)variables.get(EventAttribute.TAGINSTANCE.name()));
-			tagInstances.add(event.toString());
-			System.out.println(event);
+			tagInstances.put(tagInstance.getInstanceID(), tagInstance);
+			System.out.println(tagInstance);
 			
 		}
 		
+		if (variables.containsKey(EventAttribute.TAGINSTANCE_REMOVE.name())) {
+			tagInstances.remove(variables.get(EventAttribute.TAGINSTANCE_REMOVE.name()));
+		}
 		if (variables.containsKey(EventAttribute.LOGMESSAGE.name())) {
 			System.out.println(variables.get(EventAttribute.LOGMESSAGE.name()));
 		}
@@ -84,13 +92,13 @@ public class Tagger extends AbstractComponent {
 		requestRepaint();
 	}
 	
-	public void addTag(String tag) {
-		attributes.put(EventAttribute.TAGINSTANCE.name(), tag);
-		requestRepaint();				
-	}
+//	public void addTag(String tag) {
+//		attributes.put(EventAttribute.TAGINSTANCE.name(), tag);
+//		requestRepaint();				
+//	}
 
 	public void setText(String text) {
-		this.htmlWrapper = new HTMLWrapper(text);
+		this.htmlWrapper = new HTMLWrapper(text.substring(0, Math.min(4000, text.length()))); //TODO: just a shortcut until paging is working
 		//htmlWrapper.print();
 		setHTML(htmlWrapper.toString());
 	}

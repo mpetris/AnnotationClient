@@ -9,13 +9,22 @@
 }
 
 
-.tag_green {display:inline-block; border-bottom:5px; border-bottom-color:green;border-bottom-style:solid; }
-.tag_lightgreen {display:inline-block; border-bottom:5px; border-bottom-color:#00ff00;border-bottom-style:solid; }
-.tag_blue {display:inline-block; border-bottom:5px; border-bottom-color:blue;border-bottom-style:solid; }
-.tag_red {display:inline-block; border-bottom:5px; border-bottom-color:red;border-bottom-style:solid; }
+.tag_1 {display:inline-block; border-bottom:5px; border-bottom-color:#800000;border-bottom-style:solid; }
+.tag_2 {display:inline-block; border-bottom:5px; border-bottom-color:#008000;border-bottom-style:solid; }
+.tag_3 {display:inline-block; border-bottom:5px; border-bottom-color:#808000;border-bottom-style:solid; }
+.tag_4 {display:inline-block; border-bottom:5px; border-bottom-color:#000080;border-bottom-style:solid; }
+.tag_5 {display:inline-block; border-bottom:5px; border-bottom-color:#800080;border-bottom-style:solid; }
+.tag_6 {display:inline-block; border-bottom:5px; border-bottom-color:#008080;border-bottom-style:solid; }
+.tag_7 {display:inline-block; border-bottom:5px; border-bottom-color:#FF0000;border-bottom-style:solid; }
+.tag_8 {display:inline-block; border-bottom:5px; border-bottom-color:#00FF00;border-bottom-style:solid; }
+.tag_9 {display:inline-block; border-bottom:5px; border-bottom-color:#FFFF00;border-bottom-style:solid; }
+.tag_10 {display:inline-block; border-bottom:5px; border-bottom-color:#0000FF;border-bottom-style:solid; }
+.tag_11 {display:inline-block; border-bottom:5px; border-bottom-color:#FF00FF;border-bottom-style:solid; }
+.tag_12 {display:inline-block; border-bottom:5px; border-bottom-color:#00FFFF;border-bottom-style:solid; }
 
 .tagger_menu {
-    background-color : #ffc;
+ /*   background-color : #ffc; */
+ 	background-color: #FFFFFF;
     border: 1px solid #000000;
     color:  #222222;
     font-family: Arial,Helvetica,Tahoma,Verdana,sans-serif;
@@ -24,4 +33,25 @@
 
 .tagger_menu_item td {
 	padding-right:10px;
+}
+
+
+.tagger-pushButton
+{
+    border                      :   1px solid #666;
+    margin                      :   3px 1px;
+    cursor                      :   hand;
+    cursor                      :   pointer;
+    background-color            :   #F5F5F5;
+    padding                     :   0 10px;
+}
+
+.tagger-pushButton-down-hovering
+{
+    background-color            :   #ccf;
+}
+
+.tagger-pushButton-up-hovering
+{
+    background-color            :   #F5F5F5;
 }

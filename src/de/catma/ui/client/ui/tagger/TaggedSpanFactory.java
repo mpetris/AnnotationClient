@@ -4,35 +4,32 @@ import java.util.Date;
 
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Random;
 
 public class TaggedSpanFactory {
 
-	private String tag;
 	private String instanceID;
 	private int instanceReferenceCounter = 1;
+	private int colorCode;
 	
-	public TaggedSpanFactory(String tag) {
-		this(tag, String.valueOf(new Date().getTime()));
+	public TaggedSpanFactory() {
+		this(String.valueOf(new Date().getTime()));
 	}
 	
-	public TaggedSpanFactory(String tag, String instanceID) {
+	public TaggedSpanFactory(String instanceID) {
 		super();
-		this.tag = tag;
 		this.instanceID = instanceID;
+		this.colorCode = Random.nextInt(11)+1;
 	}
 
 	public Element createTaggedSpan(String innerHtml) {
 		Element taggedSpan = DOM.createSpan();
-		taggedSpan.addClassName(tag);
+		taggedSpan.addClassName("tag_"+colorCode);
 		taggedSpan.setId(instanceID + "_" + instanceReferenceCounter++);
 		taggedSpan.setInnerHTML(innerHtml);
 		return taggedSpan;
 	}
 
-	public String getTag() {
-		return tag;
-	}
-	
 	public String getInstanceID() {
 		return instanceID;
 	}

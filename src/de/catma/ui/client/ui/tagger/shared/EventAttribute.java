@@ -4,6 +4,6 @@ public enum EventAttribute {
 	HTML,
 	TAGINSTANCE, 
 	LOGMESSAGE, 
-	ALLTAGINSTANCES, 
+	TAGINSTANCE_REMOVE,
 	;
 }
