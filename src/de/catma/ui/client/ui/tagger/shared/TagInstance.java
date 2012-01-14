@@ -24,6 +24,7 @@ public class TagInstance {
 	private String instanceID;
 	private String targetURI;
 	private List<TextRange> ranges;
+	private String authorURI;
 
 	public TagInstance(String body, String instanceID, String color, List<TextRange> ranges) {
 		super();
@@ -52,6 +53,14 @@ public class TagInstance {
 		}
 	}
 	
+	public TagInstance(TagInstance tagInstanceToCopy, int base) {
+		this(tagInstanceToCopy.body, tagInstanceToCopy.instanceID, 
+				tagInstanceToCopy.color, new ArrayList<TextRange>());
+		for (TextRange tr : tagInstanceToCopy.getRanges()) {
+			ranges.add(new TextRange(tr.getStartPos()+base, tr.getEndPos()+base));
+		}
+	}
+
 	public Map<String,Object> toMap() {
 		Map<String, Object> result =
 				new HashMap<String, Object>();
@@ -84,5 +93,26 @@ public class TagInstance {
 	
 	public List<TextRange> getRanges() {
 		return ranges;
+	}
+	
+	public String getTargetURI() {
+		return targetURI;
+	}
+	
+	public void setTargetURI(String targetURI) {
+		this.targetURI = targetURI;
+	}
+	
+	@Override
+	public String toString() {
+		return "#" + instanceID + " " + body + ((getRanges().size()>0)? getRanges().get(0) :"");
+	}
+
+	public void setAuthorURI(String authorURI) {
+		this.authorURI = authorURI;
+	}
+	
+	public String getAuthorURI() {
+		return authorURI;
 	}
 }

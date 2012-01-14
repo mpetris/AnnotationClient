@@ -5,6 +5,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import de.catma.ui.client.ui.tagger.shared.TagInstance;
+
 public class Pager {
 	
 	public static interface PagerListener {
@@ -132,5 +134,16 @@ public class Pager {
 	
 	public void setPagerListener(PagerListener pagerListener) {
 		this.pagerListener = pagerListener;
+	}
+
+	public Page getPageFor(TagInstance ti) {
+		
+		for (Page p : pages) {
+			if (p.includes(ti)) {
+				return p;
+			}
+		}
+		
+		return null;
 	}
 }

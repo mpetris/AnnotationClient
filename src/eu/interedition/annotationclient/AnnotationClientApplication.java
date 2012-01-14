@@ -1,6 +1,8 @@
 package eu.interedition.annotationclient;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import com.vaadin.Application;
@@ -10,17 +12,23 @@ import com.vaadin.ui.Panel;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 
+import de.catma.ui.client.ui.tagger.shared.TagInstance;
 import de.catma.ui.tagger.Tagger;
+import de.catma.ui.tagger.Tagger.TaggerListener;
 import de.catma.ui.tagger.pager.Pager;
 import de.catma.ui.tagger.pager.PagerComponent;
 import de.catma.ui.tagger.pager.PagerComponent.PageChangeListener;
+import eu.interedition.annotationcomm.AnnotationServerConnection;
 
 public class AnnotationClientApplication extends Application {
+	
 	private static enum ArgumentKey {
 		uri,
 		;
 	}
 
+	private String uri;
+	
 	@Override
 	public void init() {
 		final Window mainWindow = new Window("Annotator");
@@ -32,8 +40,21 @@ public class AnnotationClientApplication extends Application {
 		//editorPanel.setScrollable(true);
 
 		Pager pager = new Pager(80, 30);
-
-		final Tagger tagger = new Tagger(pager);
+		
+		final Tagger tagger = new Tagger(pager, new TaggerListener() {
+			
+			public void tagInstanceAdded(TagInstance tagInstance) {
+				try {
+					tagInstance.setTargetURI(uri);
+					tagInstance.setAuthorURI("http://applicatons.org/interedition-oac-client");
+					AnnotationServerConnection.putAnnotation(tagInstance);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+			}
+		});
+		
 		tagger.setSizeFull();
 		editorPanel.addComponent(tagger);
 
@@ -60,7 +81,7 @@ public class AnnotationClientApplication extends Application {
 			public void handleParameters(Map<String, String[]> parameters) {
 
 //				String uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
-				String uri = "file:///C:/data/projects/interedition/pg11.txt";
+				uri = "file:///C:/data/projects/interedition/pg11.txt";
 				if ((parameters != null) 
 						&& (parameters.containsKey(ArgumentKey.uri.name()) 
 								&& (parameters.get(ArgumentKey.uri.name()).length > 0))) {	
@@ -72,6 +93,8 @@ public class AnnotationClientApplication extends Application {
 							new AnnotationTargetLoader(
 									new URI(uri));
 					tagger.setText(annotationTargetLoader.getTargetText());
+					List<TagInstance> availableAnnotations = AnnotationServerConnection.getAnnotations(uri);
+					tagger.addTagInstances(availableAnnotations);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

@@ -152,7 +152,7 @@ class TagMenuPopup extends DialogBox {
 		TagInstance tagInstance = vTagger.getTagInstance(tagInstanceID);
 
 		Grid grid = new Grid(1,3);
-		Label l = new Label(tagInstance.getBody() + " #" + tagInstanceID);
+		Label l = new HTML(tagInstance.getBody() + " #" + tagInstanceID);
 		grid.setWidget(0, 0, l);
 		
 		PushButton tagRemoveButton = new PushButton("remove");

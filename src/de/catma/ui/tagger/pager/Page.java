@@ -15,6 +15,7 @@ import nu.xom.Serializer;
 import nu.xom.Text;
 import de.catma.ui.client.ui.tagger.shared.ContentElementID;
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
+import de.catma.ui.client.ui.tagger.shared.TextRange;
 
 public class Page {
 
@@ -139,5 +140,26 @@ public class Page {
 	
 	public Collection<TagInstance> getTagInstances() {
 		return Collections.unmodifiableCollection(this.tagInstances.values());
+	}
+
+	public TagInstance getAbsoluteTagInstance(TagInstance tagInstance) {
+		return new TagInstance(tagInstance, pageStart);
+	}
+
+	public void addAbsoluteTagInstance(TagInstance ti) {
+		TagInstance relativeInstance = new TagInstance(ti, pageStart*(-1));
+		System.out.println(relativeInstance);
+		addTagInstance(relativeInstance);
+		
+	}
+
+	public boolean includes(TagInstance ti) {
+		if (ti.getRanges().size()>0) {
+			TextRange tr = ti.getRanges().get(0);
+			if ((tr.getStartPos()>=this.pageStart) && (tr.getEndPos()<=this.pageEnd)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

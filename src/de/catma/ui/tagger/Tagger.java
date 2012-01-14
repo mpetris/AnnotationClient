@@ -1,6 +1,7 @@
 package de.catma.ui.tagger;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.vaadin.terminal.PaintException;
@@ -18,13 +19,21 @@ import de.catma.ui.tagger.pager.Pager;
  */
 @com.vaadin.ui.ClientWidget(VTagger.class)
 public class Tagger extends AbstractComponent {
+	
+	public static interface TaggerListener {
+		public void tagInstanceAdded(TagInstance tagInstance);
+	}
+	
 	private static final long serialVersionUID = 1L;
 
 	private Map<String,String> attributes = new HashMap<String, String>();
 	private Pager pager;
+
+	private TaggerListener taggerListener;
 	
-	public Tagger(Pager pager) {
+	public Tagger(Pager pager, TaggerListener taggerListener) {
 		this.pager = pager;
+		this.taggerListener = taggerListener;
 	}
 
 	@Override
@@ -70,6 +79,8 @@ public class Tagger extends AbstractComponent {
 				new TagInstance(
 						(Map<String,Object>)variables.get(EventAttribute.TAGINSTANCE.name()));
 			pager.getCurrentPage().addTagInstance(tagInstance);
+			taggerListener.tagInstanceAdded(
+					pager.getCurrentPage().getAbsoluteTagInstance(tagInstance));
 		}
 		
 		if (variables.containsKey(EventAttribute.TAGINSTANCE_REMOVE.name())) {
@@ -99,5 +110,17 @@ public class Tagger extends AbstractComponent {
 	public void setPage(int pageNumber) {
 		Page page = pager.getPage(pageNumber);
 		setHTML(page.toHTML());
+	}
+
+	public void addTagInstances(List<TagInstance> availableAnnotations) {
+		
+		for (TagInstance ti : availableAnnotations) {
+			System.out.println(ti);
+			Page page = pager.getPageFor(ti);
+			if (page != null) {
+				page.addAbsoluteTagInstance(ti);
+			}
+		}
+		requestRepaint();
 	}
 }
