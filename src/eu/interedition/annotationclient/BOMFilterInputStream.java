@@ -32,13 +32,19 @@ import java.nio.charset.Charset;
  *
  */
 public class BOMFilterInputStream extends FilterInputStream {
+	
+	public static final byte[] UTF_8_BOM = 
+			new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF};
 
     private final static Charset UTF8 = Charset.forName( "UTF-8" );
     private final static Charset UTF16 = Charset.forName( "UTF-16" );
     private final static Charset UTF16BE = Charset.forName( "UTF-16BE" );
     private final static Charset UTF16LE = Charset.forName( "UTF-16LE" );
     
-    public BOMFilterInputStream(InputStream in, Charset charset ) throws IOException {
+    private int[] utf8bomTestBuffer = null;
+    private int utf8bomTestBufferIdx = 3;
+    
+    public BOMFilterInputStream(InputStream in, Charset charset) throws IOException {
         super(in);
 		handleBOM( charset );
     }
@@ -50,7 +56,13 @@ public class BOMFilterInputStream extends FilterInputStream {
      */
     private void handleBOM( Charset charset ) throws IOException {
         if( charset.equals( UTF8 ) ) {
-            skip( 3 );
+        	int i1=read();
+        	int i2=read();
+        	int i3=read();
+        	if ((i1==UTF_8_BOM[0]) || (i2==UTF_8_BOM[1]) || (i3==UTF_8_BOM[2])) {
+        		utf8bomTestBuffer = new int[] { i1, i2, i3 };
+        		utf8bomTestBufferIdx = -1;
+        	}
         }
         else if(
             charset.equals( UTF16 )
@@ -58,6 +70,17 @@ public class BOMFilterInputStream extends FilterInputStream {
             || charset.equals( UTF16LE ) ) {
             skip( 2 );
         }
+    }
+    
+    
+    @Override
+    public int read() throws IOException {
+    	if (utf8bomTestBufferIdx <=1) {
+    		utf8bomTestBufferIdx++;
+    		return utf8bomTestBuffer[utf8bomTestBufferIdx];
+    	}
+    	
+    	return super.read();
     }
 
 }
