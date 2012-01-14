@@ -8,7 +8,7 @@
 	white-space:nowrap;
 }
 
-
+/*
 .tag_1 {display:inline-block; border-bottom:5px; border-bottom-color:#800000;border-bottom-style:solid; }
 .tag_2 {display:inline-block; border-bottom:5px; border-bottom-color:#008000;border-bottom-style:solid; }
 .tag_3 {display:inline-block; border-bottom:5px; border-bottom-color:#808000;border-bottom-style:solid; }
@@ -21,6 +21,7 @@
 .tag_10 {display:inline-block; border-bottom:5px; border-bottom-color:#0000FF;border-bottom-style:solid; }
 .tag_11 {display:inline-block; border-bottom:5px; border-bottom-color:#FF00FF;border-bottom-style:solid; }
 .tag_12 {display:inline-block; border-bottom:5px; border-bottom-color:#00FFFF;border-bottom-style:solid; }
+*/
 
 .tagger_menu {
  /*   background-color : #ffc; */

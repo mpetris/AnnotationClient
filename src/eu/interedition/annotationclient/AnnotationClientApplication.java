@@ -31,7 +31,7 @@ public class AnnotationClientApplication extends Application {
 		editorPanel.setWidth("640px");
 		editorPanel.setScrollable(true);
 		Pager pager = new Pager(80, 30);
-		System.out.println("nase");
+
 		final Tagger tagger = new Tagger(pager);
 		tagger.setSizeFull();
 		editorPanel.addComponent(tagger);

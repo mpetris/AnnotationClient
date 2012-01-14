@@ -47,8 +47,11 @@ public class TagMenu implements MouseMoveHandler {
 			
 			if (vTagger.hasSelection() || !taggedSpans.isEmpty()) {
 				hidePopup();
-				
-				lastPopup = new TagMenuPopup(vTagger);
+				String lastSelectedColor = null;
+				if (lastPopup != null) {
+					lastSelectedColor = lastPopup.getLastSelectedColor();
+				}
+				lastPopup = new TagMenuPopup(vTagger, lastSelectedColor);
 				lastPopup.setPopupPosition(lastClientX, lastClientY+5);
 				
 				for (Element span : taggedSpans) {

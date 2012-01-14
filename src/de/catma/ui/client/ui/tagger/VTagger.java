@@ -139,7 +139,7 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 			tagInstances.put(tagInstance.getInstanceID(), tagInstance);
 			
 			TaggedSpanFactory taggedSpanFactory = 
-					new TaggedSpanFactory(tagInstance.getInstanceID());
+					new TaggedSpanFactory(tagInstance.getInstanceID(), tagInstance.getColor());
 			for (TextRange textRange : tagInstance.getRanges()) {
 				addTagToRange(taggedSpanFactory, rangeConverter.convertToNodeRange(textRange));
 			}
@@ -160,9 +160,10 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 		getElement().appendChild(html.getElement());
 	}
 	 
-	public void addTag(String body) {
+	public void addTag(String body, String color) {
 		
-		TaggedSpanFactory taggedSpanFactory = new TaggedSpanFactory();
+		TaggedSpanFactory taggedSpanFactory = new TaggedSpanFactory(color);
+		
 		if ((lastRangeList != null) && (!lastRangeList.isEmpty())) {
 
 			//TODO: flatten ranges to prevent multiple tagging of the same range with the same instance!
@@ -189,7 +190,10 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 			}
 
 			if (!textRanges.isEmpty()) {
-				TagInstance te = new TagInstance(body, taggedSpanFactory.getInstanceID(), textRanges);
+				TagInstance te = 
+						new TagInstance(
+								body, taggedSpanFactory.getInstanceID(), 
+								taggedSpanFactory.getColor(), textRanges);
 				tagInstances.put(te.getInstanceID(), te);
 				sendMessage(EventAttribute.LOGMESSAGE, "TAGEVENT.toString: " + te.toString());
 				sendMessage(EventAttribute.TAGINSTANCE, te.toMap());

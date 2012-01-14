@@ -33,11 +33,9 @@ public class Tagger extends AbstractComponent {
 
 		if (target.isFullRepaint() && !pager.isEmpty()) {
 			attributes.put(EventAttribute.HTML.name(), pager.getCurrentPage().toHTML());
-			System.out.println("putting html");
 		}
 		
 		if (!pager.isEmpty() && attributes.containsKey(EventAttribute.HTML.name())) {
-			System.out.println("putting tags: " + pager.getCurrentPage().getTagInstances().size());
 			int i = 0;
 			for (TagInstance t : pager.getCurrentPage().getTagInstances()) {
 				target.addAttribute(EventAttribute.TAGINSTANCE.name()+i, t.toMap());
@@ -94,7 +92,6 @@ public class Tagger extends AbstractComponent {
 //	}
 
 	public void setText(String text) {
-		System.out.println("setting text");
 		pager.setText(text);
 		setHTML(pager.getCurrentPage().toHTML());
 	}
