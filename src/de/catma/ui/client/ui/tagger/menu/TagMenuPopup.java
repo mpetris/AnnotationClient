@@ -8,31 +8,33 @@ import net.auroris.ColorPicker.client.ColorPicker;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Random;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.PushButton;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Tree;
 import com.google.gwt.user.client.ui.TreeItem;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 import com.google.web.bindery.event.shared.HandlerRegistration;
 
 import de.catma.ui.client.ui.tagger.VTagger;
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
 
-class TagMenuPopup extends PopupPanel {
+class TagMenuPopup extends DialogBox {
 		
 	private TreeItem root;
 	private List<HandlerRegistration> handlerRegistrations = new ArrayList<HandlerRegistration>();
 	private VTagger vTagger;
 	private String lastSelectedColor = null;
 	
-	
 	public TagMenuPopup(VTagger vTagger, String lastSelectedColor) {
 		super(true);
+		this.setText("Annotations");
 		this.vTagger = vTagger;
 		this.lastSelectedColor = lastSelectedColor;
 		root = new TreeItem("Available annotations");
@@ -52,7 +54,15 @@ class TagMenuPopup extends PopupPanel {
 			annotationBodyInput.setWidth("90%");
 			annotationCreationPanel.add(annotationBodyInput);
 			final HorizontalPanel annotationCreationButtonPanel = new HorizontalPanel();
-			final ColorPicker colorPicker = new ColorPicker();
+			annotationCreationButtonPanel.setSpacing(5);
+			final Label colorLabel = new HTML("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
+			final ColorPicker colorPicker = new ColorPicker() {
+				@Override
+				public void onChange(Widget sender) {
+					super.onChange(sender);
+					colorLabel.getElement().setAttribute("style", "background:#"+this.getHexColor()+";");
+				}
+			};
 			try {
 				if (lastSelectedColor != null) {
 					colorPicker.setHex(lastSelectedColor);
@@ -64,12 +74,12 @@ class TagMenuPopup extends PopupPanel {
 			} catch (Exception e) {
 				// well...
 			}
+			colorLabel.getElement().setAttribute("style", "background:#"+colorPicker.getHexColor()+";");
 
 			HorizontalPanel colorPanel = new HorizontalPanel();
+			colorPanel.setSpacing(5);
 			PushButton colorButton = new PushButton("Change color...");
 			colorPanel.add(colorButton); 
-			Label colorLabel = new HTML("&nbsp;&nbsp;&nbsp;");
-			colorLabel.getElement().setAttribute("style", "background:#"+colorPicker.getHexColor()+";");
 			
 			colorPanel.add(colorLabel);
 			
@@ -79,6 +89,7 @@ class TagMenuPopup extends PopupPanel {
 					
 					annotationCreationPanel.insert(
 						colorPicker, annotationCreationPanel.getWidgetIndex(annotationCreationButtonPanel));
+					TagMenuPopup.this.center();
 				}
 			});
 			handlerRegistrations.add(colorButtonReg);
@@ -130,6 +141,12 @@ class TagMenuPopup extends PopupPanel {
 		setWidget(vPanel);
 	}
 	
+	@Override
+	public void show() {
+		Window.enableScrolling(true);
+		super.show();
+	}
+	
 	public void addTag(final String tagInstanceID) {
 		
 		TagInstance tagInstance = vTagger.getTagInstance(tagInstanceID);
@@ -171,6 +188,7 @@ class TagMenuPopup extends PopupPanel {
 		for (HandlerRegistration hr : handlerRegistrations) {
 			hr.removeHandler();
 		}
+		Window.enableScrolling(false);
 	}
 	
 	

@@ -24,12 +24,13 @@ public class AnnotationClientApplication extends Application {
 	@Override
 	public void init() {
 		final Window mainWindow = new Window("Annotator");
-
-		Panel editorPanel = new Panel("Interedition OAC Annotation Client - Bootcamp, January 2012 Leuven");
+		
+		Panel editorPanel = new Panel("Interedition OAC Annotation Client - Bootcamp, January 2012, Leuven");
 		editorPanel.setStyleName("editor-panel");
 		editorPanel.getContent().setSizeUndefined();
 		editorPanel.setWidth("640px");
-		editorPanel.setScrollable(true);
+		//editorPanel.setScrollable(true);
+
 		Pager pager = new Pager(80, 30);
 
 		final Tagger tagger = new Tagger(pager);

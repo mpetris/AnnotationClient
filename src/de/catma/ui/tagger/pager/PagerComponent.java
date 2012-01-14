@@ -3,6 +3,7 @@ package de.catma.ui.tagger.pager;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.terminal.ThemeResource;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
@@ -127,6 +128,7 @@ public class PagerComponent extends HorizontalLayout {
 		addComponent(pageInput);
 		lastPageNumberLabel = new Label("/NA");
 		addComponent(lastPageNumberLabel);
+		this.setComponentAlignment(lastPageNumberLabel, Alignment.MIDDLE_LEFT);
 		nextPageButton = new Button();
 		nextPageButton.setIcon(nextPageIcon);
 		addComponent(nextPageButton);
