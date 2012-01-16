@@ -162,4 +162,8 @@ public class Page {
 		}
 		return false;
 	}
+
+	public void clearTagInstances() {
+		tagInstances.clear();
+	}
 }

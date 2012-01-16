@@ -44,7 +44,9 @@ public class Tagger extends AbstractComponent {
 			attributes.put(EventAttribute.HTML.name(), pager.getCurrentPage().toHTML());
 		}
 		
-		if (!pager.isEmpty() && attributes.containsKey(EventAttribute.HTML.name())) {
+		if (!pager.isEmpty() && 
+				(attributes.containsKey(EventAttribute.HTML.name())
+						|| attributes.containsKey(EventAttribute.TAGINSTANCE_CLEAR.name()))) {
 			int i = 0;
 			for (TagInstance t : pager.getCurrentPage().getTagInstances()) {
 				target.addAttribute(EventAttribute.TAGINSTANCE.name()+i, t.toMap());
@@ -96,11 +98,6 @@ public class Tagger extends AbstractComponent {
 		attributes.put(EventAttribute.HTML.name(), html);
 		requestRepaint();
 	}
-	
-//	public void addTag(String tag) {
-//		attributes.put(EventAttribute.TAGINSTANCE.name(), tag);
-//		requestRepaint();				
-//	}
 
 	public void setText(String text) {
 		pager.setText(text);
@@ -112,10 +109,13 @@ public class Tagger extends AbstractComponent {
 		setHTML(page.toHTML());
 	}
 
-	public void addTagInstances(List<TagInstance> availableAnnotations) {
+	public void setTagInstances(List<TagInstance> availableAnnotations) {
+		attributes.put(EventAttribute.TAGINSTANCE_CLEAR.name(), Boolean.TRUE.toString());
+		for (Page page : pager) {
+			page.clearTagInstances();
+		}
 		
 		for (TagInstance ti : availableAnnotations) {
-			System.out.println(ti);
 			Page page = pager.getPageFor(ti);
 			if (page != null) {
 				page.addAbsoluteTagInstance(ti);

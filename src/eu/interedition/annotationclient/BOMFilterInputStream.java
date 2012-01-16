@@ -59,9 +59,12 @@ public class BOMFilterInputStream extends FilterInputStream {
         	int i1=read();
         	int i2=read();
         	int i3=read();
-        	if ((i1==UTF_8_BOM[0]) || (i2==UTF_8_BOM[1]) || (i3==UTF_8_BOM[2])) {
+        	if ((((byte)i1)!=UTF_8_BOM[0]) || (((byte)i2)!=UTF_8_BOM[1]) || (((byte)i3)!=UTF_8_BOM[2])) {
         		utf8bomTestBuffer = new int[] { i1, i2, i3 };
         		utf8bomTestBufferIdx = -1;
+        	}
+        	else {
+        		skip(3);
         	}
         }
         else if(

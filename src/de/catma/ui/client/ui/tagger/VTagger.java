@@ -75,6 +75,9 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 	}
 	
 	public void removeTag(String tagInstanceID) {
+		removeTag(tagInstanceID, true);
+	}
+	public void removeTag(String tagInstanceID, boolean reportToServer) {
 		int currentPartID = 1;
 		Element taggedSpan = Document.get().getElementById(tagInstanceID + "_" + currentPartID++);
 		while(taggedSpan != null) {
@@ -90,7 +93,9 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 			taggedSpan = Document.get().getElementById(tagInstanceID + "_" + currentPartID++);
 		}
 		tagInstances.remove(tagInstanceID);
-		sendMessage(EventAttribute.TAGINSTANCE_REMOVE, tagInstanceID);
+		if (reportToServer) {
+			sendMessage(EventAttribute.TAGINSTANCE_REMOVE, tagInstanceID);
+		}
 	}
 
 	public void onMouseUp(MouseUpEvent event) {
@@ -121,20 +126,25 @@ public class VTagger extends FocusWidget implements Paintable, MouseUpHandler {
 			VConsole.log("setting html");
 			setHTML(new HTML(uidl.getStringAttribute(EventAttribute.HTML.name())));
 		}
-//		if (uidl.hasAttribute(EventAttribute.TAGINSTANCE.name())) {
-//			String tag = uidl.getStringAttribute(EventAttribute.TAGINSTANCE.name());
-//			VConsole.log("adding tag: " + tag);
-//			addTag(tag);
-//		}
 
+
+		if (uidl.hasAttribute(EventAttribute.TAGINSTANCE_CLEAR.name()) 
+				&& uidl.getBooleanAttribute(EventAttribute.TAGINSTANCE_CLEAR.name())) {
+			ArrayList<String> keyCopy = new ArrayList<String>();
+			keyCopy.addAll(tagInstances.keySet());
+			for (String tagInstanceID : keyCopy) {
+				removeTag(tagInstanceID, false);
+			}
+		}
+		
 		int i=0;
 		RangeConverter rangeConverter = new RangeConverter();
 
 		while (uidl.hasAttribute(EventAttribute.TAGINSTANCE.name()+i)) {
-
 			ValueMap tagInstanceValueMap = 
 					uidl.getMapAttribute(EventAttribute.TAGINSTANCE.name()+i);
 			TagInstance tagInstance = getTagInstance(tagInstanceValueMap);
+			VConsole.log("got tag instance from server: " + tagInstance);
 			
 			tagInstances.put(tagInstance.getInstanceID(), tagInstance);
 			

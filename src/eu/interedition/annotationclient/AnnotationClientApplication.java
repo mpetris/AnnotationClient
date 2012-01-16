@@ -8,6 +8,9 @@ import java.util.Map;
 import com.vaadin.Application;
 import com.vaadin.terminal.ParameterHandler;
 import com.vaadin.ui.Alignment;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
@@ -47,7 +50,8 @@ public class AnnotationClientApplication extends Application {
 				try {
 					tagInstance.setTargetURI(uri);
 					tagInstance.setAuthorURI("http://applicatons.org/interedition-oac-client");
-					AnnotationServerConnection.putAnnotation(tagInstance);
+					AnnotationServerConnection annotationServerConnection = new AnnotationServerConnection();
+					annotationServerConnection.putAnnotation(tagInstance);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -72,6 +76,21 @@ public class AnnotationClientApplication extends Application {
 		
 		mainLayout.addComponent(pagerComponent);
 		mainLayout.setComponentAlignment(pagerComponent, Alignment.MIDDLE_CENTER);
+		Button reloadAnnotations = new Button("Reload annotations");
+		reloadAnnotations.addListener(new ClickListener() {
+			
+			public void buttonClick(ClickEvent event) {
+				try {
+					AnnotationServerConnection annotationServerConnection = new AnnotationServerConnection();
+					List<TagInstance> availableAnnotations = annotationServerConnection.getAnnotations(uri);
+					tagger.setTagInstances(availableAnnotations);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		mainLayout.addComponent(reloadAnnotations);
 		
 		setMainWindow(mainWindow);
 		setTheme("cleatheme");
@@ -80,8 +99,8 @@ public class AnnotationClientApplication extends Application {
 
 			public void handleParameters(Map<String, String[]> parameters) {
 
-//				String uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
-				uri = "file:///C:/data/projects/interedition/pg11.txt";
+//			uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
+				uri = "file:///C:/data/projects/interedition/pg14.txt";
 				if ((parameters != null) 
 						&& (parameters.containsKey(ArgumentKey.uri.name()) 
 								&& (parameters.get(ArgumentKey.uri.name()).length > 0))) {	
@@ -93,8 +112,9 @@ public class AnnotationClientApplication extends Application {
 							new AnnotationTargetLoader(
 									new URI(uri));
 					tagger.setText(annotationTargetLoader.getTargetText());
-					List<TagInstance> availableAnnotations = AnnotationServerConnection.getAnnotations(uri);
-					tagger.addTagInstances(availableAnnotations);
+					AnnotationServerConnection annotationServerConnection = new AnnotationServerConnection();
+					List<TagInstance> availableAnnotations = annotationServerConnection.getAnnotations(uri);
+					tagger.setTagInstances(availableAnnotations);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

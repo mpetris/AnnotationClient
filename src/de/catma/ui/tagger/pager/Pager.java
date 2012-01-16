@@ -1,13 +1,15 @@
 package de.catma.ui.tagger.pager;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
 
-public class Pager {
+public class Pager implements Iterable<Page> {
 	
 	public static interface PagerListener {
 		public void textChanged();
@@ -145,5 +147,9 @@ public class Pager {
 		}
 		
 		return null;
+	}
+	
+	public Iterator<Page> iterator() {
+		return Collections.unmodifiableCollection(pages).iterator();
 	}
 }
