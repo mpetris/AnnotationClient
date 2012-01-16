@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 
 public class AnnotationTargetLoader {
 
@@ -18,6 +19,7 @@ public class AnnotationTargetLoader {
 	}
 	
 	public String getTargetText() throws Exception {
+		boolean hasBOM = BOMFilterInputStream.hasBOM(targetURI);
 		URL targetURL = targetURI.toURL();
 		URLConnection targetURLConnection = targetURL.openConnection();
 		InputStream targetInputStream = targetURLConnection.getInputStream();
@@ -26,13 +28,21 @@ public class AnnotationTargetLoader {
 		String mimeType = findMimeType(targetURLConnection);
 		//TODO: check mimeType, needs to be plain text
 		
-		return streamToString(targetInputStream, encoding);
+		return streamToString(targetInputStream, encoding, hasBOM);
 	}
 	
-	private String streamToString(InputStream is, String charset) throws IOException {
+	private String streamToString(InputStream is, String charset, boolean hasBOM) throws IOException {
 		StringBuilder contentBuffer = new StringBuilder();
-		BufferedReader reader = new BufferedReader(
-			new InputStreamReader(is, charset ) );
+		BufferedReader reader = null;
+		if (hasBOM) { 
+			reader = new BufferedReader(
+					new InputStreamReader(new BOMFilterInputStream(is, Charset.forName(charset)), charset ) );
+		}
+		else {
+			reader = new BufferedReader(
+					new InputStreamReader(is, charset ) );
+
+		}
 		
 		char[] buf = new char[65536];
 		int cCount = -1;
