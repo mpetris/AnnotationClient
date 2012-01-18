@@ -1,9 +1,11 @@
 package eu.interedition.annotationclient;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.vaadin.Application;
 import com.vaadin.terminal.ParameterHandler;
@@ -34,11 +36,17 @@ public class AnnotationClientApplication extends Application {
 		;
 	}
 
+	private static final String WEB_INF_DIR = "WEB-INF";
+	private static final String PROPERTY_FILE = "annotationclient.properties";
+	
 	private String uri;
 	
 	@Override
 	public void init() {
 		final Window mainWindow = new Window("Annotator");
+		Properties properties = loadProperties();
+		final String annotationServerURL = properties.getProperty("annotationServer");
+		final String constraintServerURL = properties.getProperty("constraintServer");
 		
 		Panel editorPanel = new Panel("Interedition OAC Annotation Client - Bootcamp, January 2012, Leuven");
 		editorPanel.setStyleName("editor-panel");
@@ -54,7 +62,8 @@ public class AnnotationClientApplication extends Application {
 				try {
 					tagInstance.setTargetURI(uri);
 					tagInstance.setAuthorURI("http://applicatons.org/interedition-oac-client");
-					AnnotationServerConnection annotationServerConnection = new AnnotationServerConnection();
+					AnnotationServerConnection annotationServerConnection = 
+							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
 					annotationServerConnection.putAnnotation(tagInstance);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -85,7 +94,8 @@ public class AnnotationClientApplication extends Application {
 			
 			public void buttonClick(ClickEvent event) {
 				try {
-					AnnotationServerConnection annotationServerConnection = new AnnotationServerConnection();
+					AnnotationServerConnection annotationServerConnection = 
+							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
 					List<TagInstance> availableAnnotations = annotationServerConnection.getAnnotations(uri);
 					tagger.setTagInstances(availableAnnotations);
 				}
@@ -116,7 +126,8 @@ public class AnnotationClientApplication extends Application {
 							new AnnotationTargetLoader(
 									new URI(uri));
 					tagger.setText(annotationTargetLoader.getTargetText());
-					AnnotationServerConnection annotationServerConnection = new AnnotationServerConnection();
+					AnnotationServerConnection annotationServerConnection = 
+							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
 					List<TagInstance> availableAnnotations = annotationServerConnection.getAnnotations(uri);
 					tagger.setTagInstances(availableAnnotations);
 				} catch (Exception e) {
@@ -127,4 +138,21 @@ public class AnnotationClientApplication extends Application {
 		});
 	}
 
+	private Properties loadProperties() {
+		String path = 
+				this.getContext().getBaseDirectory() 
+				+ System.getProperty("file.separator") 
+				+ WEB_INF_DIR
+				+ System.getProperty("file.separator") 
+				+ PROPERTY_FILE;
+		
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream(path));
+		}
+		catch( IOException e) {
+			e.printStackTrace();
+		}
+		return properties;
+	}
 }

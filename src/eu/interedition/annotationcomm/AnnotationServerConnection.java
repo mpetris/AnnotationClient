@@ -23,14 +23,18 @@ import de.catma.ui.client.ui.tagger.shared.TextRange;
  */
 public class AnnotationServerConnection {
 
-	private String annotationServer = "demo.interedition.eu/raxld";
-//	private String constraintServer = "http://87.106.12.254:8182/oac-constraint/";
-//	private String constraintServer = "http://localhost:8182/oac-constraint/";
-	private String constraintServer = "http://demo.interedition.eu/oac-constraint/";
+	private String annotationServer = "http://demo.interedition.eu/raxld/";
+	private String constraintServer = "http://demo.interedition.eu/fragment-context/";
+//	private String constraintServer = "http://localhost:8080/fragment-context/";
 	
-	public AnnotationServerConnection() {
+	
+	public AnnotationServerConnection(String annotationServer,
+			String constraintServer) {
+		super();
+		this.annotationServer = annotationServer;
+		this.constraintServer = constraintServer;
 	}
-	
+
 	private String putUrlJson (String urlStr, String json) throws IOException {
 		URL url = new URL (urlStr);
 		URLConnection conn = url.openConnection();
@@ -50,6 +54,7 @@ public class AnnotationServerConnection {
 		
 		return jsonStr;
 	}
+
 
 	private String fetchJson (String urlStr) throws IOException {
 		return putUrlJson(urlStr, null);
@@ -107,7 +112,7 @@ public class AnnotationServerConnection {
 		try {
 			JSONObject bodyJson =
 					new JSONObject(
-							putUrlJson("http://" + annotationServer + "/annotation_bodies", json));
+							putUrlJson(annotationServer + "annotation_bodies", json));
 			String body_uri = bodyJson.getJSONObject("annotation_body").getString("uri");
 			
 			ConstraintServerConnection constraintServerConnection = 
@@ -136,7 +141,7 @@ public class AnnotationServerConnection {
 			
 			String annotation_uri = 
 					putUrlJson(
-						"http://"+annotationServer+"/annotations", annotationServerArgs.toString());
+						annotationServer+"annotations", annotationServerArgs.toString());
 			
 			return annotation_uri;
 			
@@ -149,7 +154,7 @@ public class AnnotationServerConnection {
 	public List<TagInstance> getAnnotations (String uri) throws IOException {
 		List<TagInstanceContext> tagInstanceContexts = new ArrayList<TagInstanceContext> ();
 		try {
-			String jsonStr = fetchJson("http://"+annotationServer+"/annotations/query?q=" + uri);
+			String jsonStr = fetchJson(annotationServer+"annotations/query?q=" + uri);
 			System.out.println("Result from annotaton server: " + jsonStr );
 			JSONArray jsonArray = new JSONArray(jsonStr);
 			
