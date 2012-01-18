@@ -23,6 +23,10 @@ import de.catma.ui.tagger.pager.PagerComponent;
 import de.catma.ui.tagger.pager.PagerComponent.PageChangeListener;
 import eu.interedition.annotationcomm.AnnotationServerConnection;
 
+/**
+ * @author marco.petris@web.de
+ *
+ */
 public class AnnotationClientApplication extends Application {
 	
 	private static enum ArgumentKey {

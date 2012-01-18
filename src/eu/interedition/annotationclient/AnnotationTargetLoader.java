@@ -9,6 +9,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 
+/**
+ * @author marco.petris@web.de
+ *
+ */
 public class AnnotationTargetLoader {
 
 	private URI targetURI;

@@ -4,16 +4,32 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import de.catma.ui.client.ui.tagger.shared.TagInstance;
 import de.catma.ui.client.ui.tagger.shared.TextRange;
 
+/**
+ * @author marco.petris@web.de
+ *
+ */
 public class ConstraintServerConnection {
 	
+	private static enum State {
+		modified,
+		success,
+		failure,
+		;
+	}
+	
 	private static enum Field {
+		state,
 		position,
 		uri,
 		constraint,
@@ -26,31 +42,63 @@ public class ConstraintServerConnection {
 		this.constraintServerURLStr = constraintServerURLStr;
 	}
 
-	public TextRange validateConstraint(String uri, String constraintJson) 
+	public List<TagInstance> validateConstraints(String uri, List<TagInstanceContext> tagInstanceContexts) 
 			throws IOException, JSONException {
-		JSONObject request = new JSONObject();
-		request.put(Field.constraint.name(), new JSONObject(constraintJson));
-		request.put(Field.uri.name(), uri);
+		
+		StringBuilder request = new StringBuilder("[");
+		String conc = "";
+		
+		for (TagInstanceContext tic : tagInstanceContexts) {
+			JSONObject curRequest = new JSONObject();
+			curRequest.put(Field.constraint.name(), tic.getConstraint());
+			curRequest.put(Field.uri.name(), uri);
+			request.append(conc);
+			request.append(curRequest.toString());
+			conc = ",";
+		}
+		
+		request.append("]");
 		
 		URLConnection urlConnection = openConnection("match");
 		IOUtils.write(request.toString(), urlConnection.getOutputStream());
 		
 		InputStream is = urlConnection.getInputStream();
 		
-		String valiatedConstraint = IOUtils.toString(is);
+		String validatedConstraints = IOUtils.toString(is);
+		System.out.println ("ConstraintSever validation response: " + validatedConstraints);
 		is.close();
-		System.out.println("VALIDATED: " + valiatedConstraint);
-		JSONObject constraint = new JSONObject(valiatedConstraint).getJSONObject("constraint");
-		System.out.println("the constr: " + constraint);
-//		String position = 
-//				new JSONObject(constraint.getString(Field.constraint.name())).getString(Field.position.name());
-		String position = 
-				constraint.getString(Field.position.name());
-		String[] positionValues = position.substring(5).split(",");
+		List<TagInstanceContext> toBeRemoved = new ArrayList<TagInstanceContext>();
 		
-		return new TextRange(
-				Integer.valueOf(positionValues[0]), 
-				Integer.valueOf(positionValues[1]));
+		JSONArray validatedConstraintsJSON = new JSONArray(validatedConstraints);
+		for (int i=0; i<validatedConstraintsJSON.length();i++) {
+			JSONObject validatedConstraint = validatedConstraintsJSON.getJSONObject(i);
+			String state = validatedConstraint.getString(Field.state.name());
+			if (state.equals(State.failure.name())) {
+				toBeRemoved.add(tagInstanceContexts.get(i));
+			}
+			else if (state.equals(State.modified.name())) {
+				JSONObject constraint = validatedConstraint.getJSONObject(Field.constraint.name());
+				
+				String position = 
+						constraint.getString(Field.position.name());
+				String[] positionValues = position.substring(5).split(",");
+				TagInstance ti = tagInstanceContexts.get(i).getTagInstance();
+				ti.getRanges().clear();
+				ti.getRanges().add(new TextRange(
+						Integer.valueOf(positionValues[0]), 
+						Integer.valueOf(positionValues[1])));
+			}
+		}
+		
+		List<TagInstance> result = new ArrayList<TagInstance>();
+		
+		for (TagInstanceContext tic : tagInstanceContexts) {
+			if (!toBeRemoved.contains(tic)) {
+				result.add(tic.getTagInstance());
+			}
+		}
+		
+		return result;
 	}
 	
 	public String createConstraint(String uri, TextRange textRange) 
@@ -67,8 +115,10 @@ public class ConstraintServerConnection {
 				"char="+textRange.getStartPos()+","+textRange.getEndPos());
 		
 		request.put(Field.constraint.name(), constraintArgs);
+		JSONArray requestArray = new JSONArray();
+		requestArray.put(request);
 		
-		IOUtils.write(request.toString(), urlConnection.getOutputStream());
+		IOUtils.write(requestArray.toString(), urlConnection.getOutputStream());
 		
 		InputStream is = urlConnection.getInputStream();
 		
