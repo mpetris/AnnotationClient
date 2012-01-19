@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.util.logging.Logger;
 
 /**
  * @author marco.petris@web.de
@@ -36,6 +37,7 @@ public class AnnotationTargetLoader {
 	}
 	
 	private String streamToString(InputStream is, String charset, boolean hasBOM) throws IOException {
+		Logger.getLogger(this.getClass().getName()).info("starting to load target text");
 		StringBuilder contentBuffer = new StringBuilder();
 		BufferedReader reader = null;
 		if (hasBOM) { 
@@ -54,6 +56,7 @@ public class AnnotationTargetLoader {
         	contentBuffer.append( buf, 0, cCount);
         }
 
+		Logger.getLogger(this.getClass().getName()).info("finished loading of target text");
         return contentBuffer.toString();
 	}
 	

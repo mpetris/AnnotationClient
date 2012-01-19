@@ -15,9 +15,15 @@ import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.ProgressIndicator;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
 
+import de.catma.backgroundservice.BackgroundService;
+import de.catma.backgroundservice.DefaultProgressCallable;
+import de.catma.backgroundservice.ExecutionListener;
+import de.catma.ui.ApplicationStartedNotifier;
+import de.catma.ui.ApplicationStartedNotifier.AppLoadedListener;
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
 import de.catma.ui.tagger.Tagger;
 import de.catma.ui.tagger.Tagger.TaggerListener;
@@ -41,13 +47,19 @@ public class AnnotationClientApplication extends Application {
 	private static final String PROPERTY_FILE = "annotationclient.properties";
 	
 	private String uri;
+	private BackgroundService backgroundService;
+	private ProgressIndicator pi;
+	private Tagger tagger;
+	private String annotationServerURL;
+	private String constraintServerURL;
+	private boolean appLoaded = false;
 	
 	@Override
 	public void init() {
 		final Window mainWindow = new Window("Annotator");
 		Properties properties = loadProperties();
-		final String annotationServerURL = properties.getProperty("annotationServer");
-		final String constraintServerURL = properties.getProperty("constraintServer");
+		annotationServerURL = properties.getProperty("annotationServer");
+		constraintServerURL = properties.getProperty("constraintServer");
 		
 		Panel editorPanel = new Panel("Interedition OAC Annotation Client - Bootcamp, January 2012, Leuven");
 		editorPanel.setStyleName("editor-panel");
@@ -57,7 +69,7 @@ public class AnnotationClientApplication extends Application {
 
 		Pager pager = new Pager(80, 30);
 		
-		final Tagger tagger = new Tagger(pager, new TaggerListener() {
+		tagger = new Tagger(pager, new TaggerListener() {
 			
 			public void tagInstanceAdded(TagInstance tagInstance) {
 				try {
@@ -66,7 +78,7 @@ public class AnnotationClientApplication extends Application {
 					AnnotationServerConnection annotationServerConnection = 
 							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
 					annotationServerConnection.putAnnotation(tagInstance);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				
@@ -105,15 +117,7 @@ public class AnnotationClientApplication extends Application {
 		reloadAnnotations.addListener(new ClickListener() {
 			
 			public void buttonClick(ClickEvent event) {
-				try {
-					AnnotationServerConnection annotationServerConnection = 
-							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
-					List<TagInstance> availableAnnotations = annotationServerConnection.getAnnotations(uri);
-					tagger.setTagInstances(availableAnnotations);
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
+				loadAnnotations();
 			}
 		});
 		menuLayout.addComponent(reloadAnnotations);
@@ -135,30 +139,44 @@ public class AnnotationClientApplication extends Application {
 		mainWindow.addParameterHandler(new ParameterHandler() {
 
 			public void handleParameters(Map<String, String[]> parameters) {
-
+				System.out.println( "bla");
 				uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
 				if ((parameters != null) 
 						&& (parameters.containsKey(ArgumentKey.uri.name()) 
 								&& (parameters.get(ArgumentKey.uri.name()).length > 0))) {	
 					uri = parameters.get(ArgumentKey.uri.name())[0];
 				}
-				
-				try {
-					AnnotationTargetLoader annotationTargetLoader = 
-							new AnnotationTargetLoader(
-									new URI(uri));
-					tagger.setText(annotationTargetLoader.getTargetText());
-					AnnotationServerConnection annotationServerConnection = 
-							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
-					List<TagInstance> availableAnnotations = annotationServerConnection.getAnnotations(uri);
-					tagger.setTagInstances(availableAnnotations);
-				} catch (Exception e) {
-					e.printStackTrace();
+				if (appLoaded) {
+					loadURI();
 				}
-
 			}
 		});
+		
+		pi = new ProgressIndicator();
+		pi.setIndeterminate(true);
+		pi.setEnabled(false);
+		
+		ApplicationStartedNotifier asn = new ApplicationStartedNotifier(new AppLoadedListener() {
+			
+			public void appLoaded() {
+				loadURI();
+				appLoaded = true;
+			}
+		});
+
+		menuLayout.addComponent(asn);
+
+		
+		VerticalLayout progressLayout = new VerticalLayout();
+		progressLayout.setMargin(true);
+		progressLayout.addComponent(pi);
+		appLayout.addComponent(progressLayout);
+		
+		backgroundService = new BackgroundService(this);
+		backgroundService.setProgressListener(new DefaultProgressListener(pi, this));
 	}
+	
+	
 
 	private Properties loadProperties() {
 		String path = 
@@ -176,5 +194,49 @@ public class AnnotationClientApplication extends Application {
 			e.printStackTrace();
 		}
 		return properties;
+	}
+	
+	private void loadURI() {
+		pi.setEnabled(true);
+		backgroundService.submit(
+				new DefaultProgressCallable<String>() {
+					public String call() throws Exception {
+						getProgressListener().setIndeterminate(true, "Loading target text...");
+						AnnotationTargetLoader annotationTargetLoader = 
+								new AnnotationTargetLoader(
+										new URI(uri));
+
+						String result =  annotationTargetLoader.getTargetText();
+						getProgressListener().setIndeterminate(false, "Loading target text finished!");
+						return result;
+					}
+				},
+				new ExecutionListener<String>() {
+					public void done(String result) {
+						tagger.setText(result);
+					}
+				});
+		loadAnnotations();
+	}
+	
+	private void loadAnnotations() {
+		pi.setEnabled(true);
+		backgroundService.submit(
+				new DefaultProgressCallable<List<TagInstance>>() {
+					public List<TagInstance> call() throws Exception {
+						AnnotationServerConnection annotationServerConnection = 
+								new AnnotationServerConnection(annotationServerURL, constraintServerURL);
+						List<TagInstance> availableAnnotations = 
+								annotationServerConnection.getAnnotations(uri, getProgressListener());
+						return availableAnnotations;
+					}
+				},
+				new ExecutionListener<List<TagInstance>>() {
+					public void done(List<TagInstance> availableAnnotations) {
+						tagger.setTagInstances(availableAnnotations);
+						pi.setCaption("Annotation client is ready!");
+						pi.setEnabled(false);
+					}
+				});
 	}
 }

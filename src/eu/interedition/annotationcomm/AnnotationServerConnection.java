@@ -6,12 +6,14 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import de.catma.backgroundservice.ProgressListener;
 import de.catma.ui.client.ui.tagger.shared.TagInstance;
 import de.catma.ui.client.ui.tagger.shared.TextRange;
 
@@ -88,7 +90,20 @@ public class AnnotationServerConnection {
 			
 			JSONObject bodyJson = new JSONObject (result);
 			JSONObject annoBody = bodyJson.getJSONObject("annotation_body");
+			
+			String mimeType = annoBody.getString("mime_type");
+			String color = "FF0000";
 			String content = annoBody.getString("content");
+			
+			if (mimeType.equals("application/json")) {
+				JSONObject contentJSON = new JSONObject(content);
+				if (contentJSON.has("color")) {
+					color = contentJSON.getString("color");
+				}
+				if (contentJSON.has("html")) {
+					content = contentJSON.getString("html");
+				}
+			}
 			
 			String body_id = Integer.toString(annoBody.getInt("annotation_id"));
 			
@@ -96,7 +111,7 @@ public class AnnotationServerConnection {
 			textRanges.add(new TextRange(
 					Integer.valueOf(positionValues[0]), 
 					Integer.valueOf(positionValues[1])));
-			TagInstance ti = new TagInstance (content, instanceID, "FF0000", textRanges); 
+			TagInstance ti = new TagInstance (content, instanceID, color, textRanges); 
 
 			return new TagInstanceContext(constraint, ti);
 		} catch (Exception e) {
@@ -106,13 +121,19 @@ public class AnnotationServerConnection {
 		}
 	}
 
-	public String putAnnotation (TagInstance annotation) throws IOException {
- 		String json = "{ \"mime_type\" : \"text/html\", \"content\" : \""+annotation.getBody()+"\" }"; 
-
+	public String putAnnotation (TagInstance annotation) throws IOException, JSONException {
+		
+		JSONObject json = new JSONObject();
+		json.put("mime_type", "application/json");
+		JSONObject content = new JSONObject();
+		content.put("html", annotation.getBody());
+		content.put("color", annotation.getColor());
+		json.put("content", content.toString());
+		
 		try {
 			JSONObject bodyJson =
 					new JSONObject(
-							putUrlJson(annotationServer + "annotation_bodies", json));
+							putUrlJson(annotationServer + "annotation_bodies", json.toString()));
 			String body_uri = bodyJson.getJSONObject("annotation_body").getString("uri");
 			
 			ConstraintServerConnection constraintServerConnection = 
@@ -151,7 +172,11 @@ public class AnnotationServerConnection {
 		}
 	}
 
-	public List<TagInstance> getAnnotations (String uri) throws IOException {
+	public List<TagInstance> getAnnotations (String uri, ProgressListener progressListener) throws IOException {
+		Logger.getLogger(this.getClass().getName()).info("starting to load annotations");
+
+		progressListener.setIndeterminate(true, "Loading annotations...");
+
 		List<TagInstanceContext> tagInstanceContexts = new ArrayList<TagInstanceContext> ();
 		try {
 			String jsonStr = fetchJson(annotationServer+"annotations/query?q=" + uri);
@@ -166,8 +191,20 @@ public class AnnotationServerConnection {
 					tagInstanceContexts.add(tagIntanceContext);
 				}
 			}
-			ConstraintServerConnection constraintServerConnection = new ConstraintServerConnection(constraintServer);
-			return constraintServerConnection.validateConstraints(uri, tagInstanceContexts);
+			Logger.getLogger(this.getClass().getName()).info("finished loading of annotations");
+			progressListener.setIndeterminate(false, "Finished loading of annotations!");
+
+			ConstraintServerConnection constraintServerConnection = 
+					new ConstraintServerConnection(constraintServer);
+			Logger.getLogger(this.getClass().getName()).info("starting to validate constraints");
+			progressListener.setIndeterminate(true, "Validating constraints...");
+
+			List<TagInstance> validatedTagInstances = 
+					constraintServerConnection.validateConstraints(uri, tagInstanceContexts);
+			Logger.getLogger(this.getClass().getName()).info("finished validation of constraints");
+			progressListener.setIndeterminate(false, "Finished validation of constraints!");
+
+			return validatedTagInstances;
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new IOException (e.getMessage(), e);
