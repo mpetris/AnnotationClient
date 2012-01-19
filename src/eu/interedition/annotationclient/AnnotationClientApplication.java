@@ -13,6 +13,7 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
+import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
@@ -61,7 +62,7 @@ public class AnnotationClientApplication extends Application {
 			public void tagInstanceAdded(TagInstance tagInstance) {
 				try {
 					tagInstance.setTargetURI(uri);
-					tagInstance.setAuthorURI("http://applicatons.org/interedition-oac-client");
+					tagInstance.setAuthorURI("http://applications.org/interedition-oac-client");
 					AnnotationServerConnection annotationServerConnection = 
 							new AnnotationServerConnection(annotationServerURL, constraintServerURL);
 					annotationServerConnection.putAnnotation(tagInstance);
@@ -81,14 +82,25 @@ public class AnnotationClientApplication extends Application {
 			}
 		});
 		
+		final HorizontalLayout appLayout = new HorizontalLayout();
+		
 		final VerticalLayout mainLayout = new VerticalLayout();
 		mainLayout.addComponent(editorPanel);
 		mainLayout.setComponentAlignment(editorPanel, Alignment.MIDDLE_CENTER);
 
-		mainWindow.setContent(mainLayout);
+		mainWindow.setContent(appLayout);
 		
 		mainLayout.addComponent(pagerComponent);
 		mainLayout.setComponentAlignment(pagerComponent, Alignment.MIDDLE_CENTER);
+		
+		VerticalLayout menuLayout = new VerticalLayout();
+		appLayout.addComponent(menuLayout);
+		appLayout.setComponentAlignment(menuLayout, Alignment.TOP_CENTER);
+		menuLayout.setMargin(true);
+		appLayout.addComponent(mainLayout);
+		appLayout.setComponentAlignment(mainLayout, Alignment.MIDDLE_CENTER);
+		
+
 		Button reloadAnnotations = new Button("Reload annotations");
 		reloadAnnotations.addListener(new ClickListener() {
 			
@@ -104,7 +116,18 @@ public class AnnotationClientApplication extends Application {
 				}
 			}
 		});
-		mainLayout.addComponent(reloadAnnotations);
+		menuLayout.addComponent(reloadAnnotations);
+		
+		Button aboutBT = new Button("About & Usage");
+		aboutBT.addListener(new ClickListener() {
+			
+			public void buttonClick(ClickEvent event) {
+				InfoDialog d = new InfoDialog();
+				mainWindow.addWindow(d);
+				
+			}
+		});
+		menuLayout.addComponent(aboutBT);
 		
 		setMainWindow(mainWindow);
 		setTheme("cleatheme");
@@ -113,8 +136,7 @@ public class AnnotationClientApplication extends Application {
 
 			public void handleParameters(Map<String, String[]> parameters) {
 
-//			uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
-				uri = "file:///C:/data/projects/interedition/pg14.txt";
+				uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
 				if ((parameters != null) 
 						&& (parameters.containsKey(ArgumentKey.uri.name()) 
 								&& (parameters.get(ArgumentKey.uri.name()).length > 0))) {	
