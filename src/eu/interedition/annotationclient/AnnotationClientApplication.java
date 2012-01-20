@@ -139,7 +139,7 @@ public class AnnotationClientApplication extends Application {
 		mainWindow.addParameterHandler(new ParameterHandler() {
 
 			public void handleParameters(Map<String, String[]> parameters) {
-				System.out.println( "bla");
+				
 				uri = "http://www.gutenberg.org/cache/epub/11/pg11.txt";
 				if ((parameters != null) 
 						&& (parameters.containsKey(ArgumentKey.uri.name()) 

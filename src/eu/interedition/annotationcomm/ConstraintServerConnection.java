@@ -6,6 +6,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
@@ -32,7 +33,8 @@ public class ConstraintServerConnection {
 		state,
 		position,
 		uri,
-		constraint,
+		constraint, 
+		context,
 		;
 	}
 	
@@ -44,17 +46,27 @@ public class ConstraintServerConnection {
 
 	public List<TagInstance> validateConstraints(String uri, List<TagInstanceContext> tagInstanceContexts) 
 			throws IOException, JSONException {
-		
+
+		List<TagInstance> result = new ArrayList<TagInstance>();
+
 		StringBuilder request = new StringBuilder("[");
 		String conc = "";
 		
 		for (TagInstanceContext tic : tagInstanceContexts) {
-			JSONObject curRequest = new JSONObject();
-			curRequest.put(Field.constraint.name(), tic.getConstraint());
-			curRequest.put(Field.uri.name(), uri);
-			request.append(conc);
-			request.append(curRequest.toString());
-			conc = ",";
+			JSONObject curConstraint = tic.getConstraint();
+			
+			if (curConstraint.has(Field.context.name()) 
+					&& (!curConstraint.getString(Field.context.name()).isEmpty())) {
+				JSONObject curRequest = new JSONObject();
+				curRequest.put(Field.constraint.name(), tic.getConstraint());
+				curRequest.put(Field.uri.name(), uri);
+				request.append(conc);
+				request.append(curRequest.toString());
+				conc = ",";
+			}
+			else {
+				result.add(tic.getTagInstance());
+			}
 		}
 		
 		request.append("]");
@@ -65,7 +77,7 @@ public class ConstraintServerConnection {
 		InputStream is = urlConnection.getInputStream();
 		
 		String validatedConstraints = IOUtils.toString(is);
-		System.out.println ("ConstraintSever validation response: " + validatedConstraints);
+		Logger.getLogger(getClass().getName()).info("ConstraintSever validation response: " + validatedConstraints);
 		is.close();
 		List<TagInstanceContext> toBeRemoved = new ArrayList<TagInstanceContext>();
 		
@@ -90,7 +102,6 @@ public class ConstraintServerConnection {
 			}
 		}
 		
-		List<TagInstance> result = new ArrayList<TagInstance>();
 		
 		for (TagInstanceContext tic : tagInstanceContexts) {
 			if (!toBeRemoved.contains(tic)) {

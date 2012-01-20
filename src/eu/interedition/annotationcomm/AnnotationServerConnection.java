@@ -73,6 +73,8 @@ public class AnnotationServerConnection {
 			
 			JSONArray arr = anno.getJSONArray("annotation_target_instances");
 			
+			Logger.getLogger(getClass().getName()).info("annotation_target_instances: " + arr);
+			
 			JSONObject annotationTargetInstance = arr.getJSONObject(0).getJSONObject(
 					"annotation_target_instance");
 
@@ -82,38 +84,47 @@ public class AnnotationServerConnection {
 			JSONObject constraint = 
 					new JSONObject(annotationConstraint.getString("constraint"));
 			
-			String position = 
-					constraint.getString("position");
-			String[] positionValues = position.substring(5).split(",");
+			String constraintType = 
+					annotationConstraint.getString("constraint_type");
 			
-			result = fetchJson(body_uri); // get the annotation body object
-			
-			JSONObject bodyJson = new JSONObject (result);
-			JSONObject annoBody = bodyJson.getJSONObject("annotation_body");
-			
-			String mimeType = annoBody.getString("mime_type");
-			String color = "FF0000";
-			String content = annoBody.getString("content");
-			
-			if (mimeType.equals("application/json")) {
-				JSONObject contentJSON = new JSONObject(content);
-				if (contentJSON.has("color")) {
-					color = contentJSON.getString("color");
+			if ((constraintType != null) && (constraintType.equals("RFC_5147"))) {
+				String position = 
+						constraint.getString("position");
+				int start = (position.contains("char=")? 5 : 0); //Hack
+				String[] positionValues = position.substring(start).split(",");
+				
+				result = fetchJson(body_uri); // get the annotation body object
+				
+				JSONObject bodyJson = new JSONObject (result);
+				JSONObject annoBody = bodyJson.getJSONObject("annotation_body");
+				
+				String mimeType = annoBody.getString("mime_type");
+				String color = "FF0000";
+				String content = annoBody.getString("content");
+				
+				if (mimeType.equals("application/json")) {
+					JSONObject contentJSON = new JSONObject(content);
+					if (contentJSON.has("color")) {
+						color = contentJSON.getString("color");
+					}
+					if (contentJSON.has("html")) {
+						content = contentJSON.getString("html");
+					}
 				}
-				if (contentJSON.has("html")) {
-					content = contentJSON.getString("html");
-				}
+				
+				String body_id = Integer.toString(annoBody.getInt("annotation_id"));
+				
+				List<TextRange> textRanges = new ArrayList<TextRange> (1);
+				textRanges.add(new TextRange(
+						Integer.valueOf(positionValues[0]), 
+						Integer.valueOf(positionValues[1])));
+				TagInstance ti = new TagInstance (content, instanceID, color, textRanges); 
+	
+				return new TagInstanceContext(constraint, ti);
 			}
 			
-			String body_id = Integer.toString(annoBody.getInt("annotation_id"));
+			return null;
 			
-			List<TextRange> textRanges = new ArrayList<TextRange> (1);
-			textRanges.add(new TextRange(
-					Integer.valueOf(positionValues[0]), 
-					Integer.valueOf(positionValues[1])));
-			TagInstance ti = new TagInstance (content, instanceID, color, textRanges); 
-
-			return new TagInstanceContext(constraint, ti);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -180,7 +191,7 @@ public class AnnotationServerConnection {
 		List<TagInstanceContext> tagInstanceContexts = new ArrayList<TagInstanceContext> ();
 		try {
 			String jsonStr = fetchJson(annotationServer+"annotations/query?q=" + uri);
-			System.out.println("Result from annotaton server: " + jsonStr );
+			Logger.getLogger(this.getClass().getName()).info("Result from annotaton server: " + jsonStr );
 			JSONArray jsonArray = new JSONArray(jsonStr);
 			
 			for (int i = 0; i < jsonArray.length(); i++) {
