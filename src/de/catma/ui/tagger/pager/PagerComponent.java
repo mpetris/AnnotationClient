@@ -108,15 +108,19 @@ public class PagerComponent extends HorizontalLayout {
 		previousPageButton.addListener(new ClickListener() {
 			
 			public void buttonClick(ClickEvent event) {
-				currentPageNumber--;
-				pageInput.setNumber(currentPageNumber);
+				if (currentPageNumber > 1) {
+					currentPageNumber--;
+					pageInput.setNumber(currentPageNumber);
+				}
 			}
 		});
 		nextPageButton.addListener(new ClickListener() {
 			
 			public void buttonClick(ClickEvent event) {
-				currentPageNumber++;
-				pageInput.setNumber(currentPageNumber);
+				if (currentPageNumber <lastPageNumber) {
+					currentPageNumber++;
+					pageInput.setNumber(currentPageNumber);
+				}
 			}
 		});
 		lastPageButton.addListener(new ClickListener() {
@@ -129,8 +133,20 @@ public class PagerComponent extends HorizontalLayout {
 		pageInput.addListener(new ValueChangeListener() {
 			
 			public void valueChange(ValueChangeEvent event) {
-				currentPageNumber = pageInput.getNumber();
-				pageChangeListener.pageChanged(currentPageNumber);
+				int targetPageNumber = pageInput.getNumber();
+				if (targetPageNumber<1) {
+					currentPageNumber = 1;
+					pageInput.setNumber(currentPageNumber);
+				}
+				else if (targetPageNumber > lastPageNumber) {
+					currentPageNumber = lastPageNumber;
+					pageInput.setNumber(currentPageNumber);
+				}
+				else {
+					currentPageNumber = targetPageNumber;
+					pageChangeListener.pageChanged(currentPageNumber);
+				}
+				
 			}
 		});
 		
